@@ -2,7 +2,7 @@ local oldPrint, oldWarn, oldError = print, warn, error
 
 local function SendLog(type, ...)
     local msg = table.concat({...}, "\t")
-    pcall(DevconsoleLog, type, msg)
+    pcall(devconsole, type, msg)
 end
 
 print = function(...)
