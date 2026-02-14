@@ -1,18 +1,18 @@
 local StarterGui = game:GetService("StarterGui")
 
 StarterGui:SetCore("SendNotification", {
-    Title = "Nyula 5.1",
-    Text = "Nyula 5.1 loaded",
+    Title = "Cleint",
+    Text = "wait before i tickle yo feet",
     Duration = 5
 })
 
 task.wait(0.5)
 StarterGui:SetCore("SendNotification", {
-    Title = "WHATTHEFUCK",
-    Text = "Bobby is so cool",
+    Title = "Ethan",
+    Text = "alright its loaded but ITS NEW SO SHUT TEH FEK Up",
     Duration = 5
 })
 
-loadstring(game:HttpGet("https://nyulalol.github.io/release/main.lua"))()
+loadstring(game:HttpGet("https://api.luarmor.net/files/v3/loaders/606b846e88998801018fae498b9b8a3c.lua"))()
 
-print("[Nyula 5.1] Script finished loading.")
+print("Loaded!!!!")
