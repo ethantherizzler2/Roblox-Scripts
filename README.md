@@ -1,4 +1,4 @@
-# Roblox Scripts (Client-Sided)
+# Roblox Scripts
 
 **For fun when I'm bored.**  
 
