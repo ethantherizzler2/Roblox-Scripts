@@ -1,4 +1,4 @@
-- Da hood based games walkspeed Only!
+-- Da hood based games walkspeed Only!
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
