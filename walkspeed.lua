@@ -12,7 +12,7 @@ local FAST_SPEED = 250
 local debugLog = {}
 
 local function log(msg)
-    local text = "[SpeedScript] " .. tostring(msg)
+    local text = "[Speed] " .. tostring(msg)
     print(text)
     table.insert(debugLog, text)
 end
