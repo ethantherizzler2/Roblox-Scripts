@@ -14,6 +14,12 @@ Dragonite.Theme = {
 
 local function Create(class, props)
     local obj = Drawing.new(class)
+    if class == "Text" then
+        obj.Font = 2 
+        obj.Size = 13
+        obj.Outline = true
+        obj.Center = false
+    end
     for i, v in pairs(props) do obj[i] = v end
     return obj
 end
@@ -27,20 +33,22 @@ function Dragonite:CreateWindow(cfg)
     local Window = {
         Tabs = {},
         Position = Vector2.new(400, 300),
-        Size = cfg.Size or Vector2.new(500, 400),
+        Size = cfg.Size or Vector2.new(500, 410),
         Visible = true
     }
 
     local outerBorder = Create("Square", {Color = Color3.new(0,0,0), Thickness = 1, Filled = false, Visible = true})
-    
     local bg = Create("Square", {Color = self.Theme.Main, Filled = true, Visible = true})
-    
     local innerContent = Create("Square", {Color = self.Theme.Content, Filled = true, Visible = true})
     local innerOutline = Create("Square", {Color = self.Theme.Outline, Thickness = 1, Filled = false, Visible = true})
-    
-    local accentLine = Create("Square", {Size = Vector2.new(Window.Size.X, 2), Color = self.Theme.Accent, Filled = true, Visible = true})
+    local accentLine = Create("Square", {Size = Vector2.new(Window.Size.X, 1), Color = self.Theme.Accent, Filled = true, Visible = true})
 
-    local title = Create("Text", {Text = string.upper(cfg.Title or "DRAGONITE"), Size = 13, Color = self.Theme.Text, Outline = true, Visible = true})
+    local title = Create("Text", {
+        Text = string.upper(cfg.Title or "DRAGONITE"), 
+        Size = 14, 
+        Color = self.Theme.Text, 
+        Visible = true
+    })
 
     local dragging, dragOffset = false, Vector2.new(0, 0)
 
@@ -49,16 +57,13 @@ function Dragonite:CreateWindow(cfg)
 
         outerBorder.Position = Window.Position - Vector2.new(1, 1)
         outerBorder.Size = Window.Size + Vector2.new(2, 2)
-        
         bg.Position = Window.Position
         bg.Size = Window.Size
-        
         accentLine.Position = Window.Position
         accentLine.Size = Vector2.new(Window.Size.X, 1)
         
-        innerContent.Position = Window.Position + Vector2.new(100, 30)
-        innerContent.Size = Window.Size - Vector2.new(110, 40)
-        
+        innerContent.Position = Window.Position + Vector2.new(110, 30)
+        innerContent.Size = Window.Size - Vector2.new(120, 40)
         innerOutline.Position = innerContent.Position
         innerOutline.Size = innerContent.Size
         
@@ -93,30 +98,36 @@ function Dragonite:CreateWindow(cfg)
 
     function Window:CreateTab(name)
         local Tab = {Active = #Window.Tabs == 0, Elements = {}}
-        Tab.Instance = Create("Text", {Text = string.upper(name), Size = 13, Outline = true, Visible = true})
+        Tab.Instance = Create("Text", {Text = string.upper(name), Visible = true})
 
         function Tab:CreateToggle(name, callback)
             local toggleData = {Enabled = false, Drawings = {}}
-            local yPos = 45 + (#Tab.Elements * 20)
+            local yPos = 20 + (#Tab.Elements * 22)
 
+            local boxOuter = Create("Square", {Size = Vector2.new(12, 12), Color = Color3.new(0,0,0), Filled = false, Thickness = 1, Visible = false})
             local box = Create("Square", {Size = Vector2.new(10, 10), Color = Dragonite.Theme.Outline, Filled = true, Visible = false})
-            local label = Create("Text", {Text = string.upper(name), Size = 13, Color = Dragonite.Theme.Text, Outline = true, Visible = false})
+            local label = Create("Text", {Text = string.upper(name), Size = 13, Color = Dragonite.Theme.TextDark, Visible = false})
 
             RunService.RenderStepped:Connect(function()
                 if Tab.Active then
-                    box.Position = innerContent.Position + Vector2.new(10, yPos)
-                    box.Color = toggleData.Enabled and Dragonite.Theme.Accent or Dragonite.Theme.Outline
-                    label.Position = box.Position + Vector2.new(18, -2)
+                    box.Position = innerContent.Position + Vector2.new(15, yPos)
+                    boxOuter.Position = box.Position - Vector2.new(1,1)
+                    boxOuter.Size = box.Size + Vector2.new(2,2)
+                    
+                    box.Color = toggleData.Enabled and Dragonite.Theme.Accent or Color3.fromRGB(35, 35, 35)
+                    label.Position = box.Position + Vector2.new(20, -1)
+                    label.Color = toggleData.Enabled and Dragonite.Theme.Text or Dragonite.Theme.TextDark
                 end
             end)
 
             UIS.InputBegan:Connect(function(i)
-                if i.UserInputType == Enum.UserInputType.MouseButton1 and Tab.Active and MouseIn(box.Position, Vector2.new(100, 15)) then
+                if i.UserInputType == Enum.UserInputType.MouseButton1 and Tab.Active and MouseIn(box.Position, Vector2.new(120, 15)) then
                     toggleData.Enabled = not toggleData.Enabled
                     callback(toggleData.Enabled)
                 end
             end)
 
+            table.insert(toggleData.Drawings, boxOuter)
             table.insert(toggleData.Drawings, box)
             table.insert(toggleData.Drawings, label)
             table.insert(Tab.Elements, toggleData)
