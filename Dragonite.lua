@@ -2,7 +2,6 @@ local Dragonite = {}
 
 local UIS = game:GetService("UserInputService")
 local Players = game:GetService("Players")
-
 local LP = Players.LocalPlayer
 local PlayerGui = LP:WaitForChild("PlayerGui")
 
@@ -10,21 +9,23 @@ Dragonite.Theme = {
     Background = Color3.fromRGB(18,18,18),
     Panel = Color3.fromRGB(24,24,24),
     Accent = Color3.fromRGB(180,20,20),
-    Text = Color3.fromRGB(255,255,255)
+    Text = Color3.fromRGB(255,255,255),
+    ToggleOn = Color3.fromRGB(50,200,50),
+    ToggleOff = Color3.fromRGB(200,50,50)
 }
 
 Dragonite.UI = {
-    TitleSize = 15,
-    TabSize = 13,
-    ElementSize = 12,
-    TabSpacing = 30,
-    ElementSpacing = 25
+    TitleSize = 18,
+    TabSize = 14,
+    ElementSize = 14,
+    TabSpacing = 35,
+    ElementSpacing = 30
 }
 
 local function Create(class, props)
     local obj = Instance.new(class)
-    for i,v in pairs(props) do
-        obj[i] = v
+    for k,v in pairs(props) do
+        obj[k] = v
     end
     return obj
 end
@@ -54,7 +55,7 @@ function Dragonite:CreateWindow(cfg)
         BorderSizePixel = 0
     })
 
-    local Accent = Create("Frame", {
+    Create("Frame", {
         Parent = Main,
         Size = UDim2.new(0,2,1,0),
         Position = UDim2.new(0,90,0,0),
@@ -62,7 +63,7 @@ function Dragonite:CreateWindow(cfg)
         BorderSizePixel = 0
     })
 
-    local Title = Create("TextLabel", {
+    Create("TextLabel", {
         Parent = Main,
         Text = cfg.Title or "Dragonite",
         Size = UDim2.new(0,200,0,30),
@@ -81,20 +82,12 @@ function Dragonite:CreateWindow(cfg)
         BackgroundTransparency = 1
     })
 
-    -- DRAGGING
-    local dragging = false
-    local dragOffset
+    local dragging, dragOffset = false, nil
 
     Main.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
             dragOffset = input.Position - Main.AbsolutePosition
-        end
-    end)
-
-    UIS.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
         end
     end)
 
@@ -105,12 +98,17 @@ function Dragonite:CreateWindow(cfg)
         end
     end)
 
+    UIS.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+
     function Window:CreateTab(name, icon)
         local Tab = {}
         Tab.Elements = {}
 
         local tabIndex = #Window.Tabs
-
         local TabButton = Create("TextButton", {
             Parent = Sidebar,
             Text = (icon or "").." "..name,
@@ -152,14 +150,12 @@ function Dragonite:CreateWindow(cfg)
                 TextSize = Dragonite.UI.ElementSize,
                 BorderSizePixel = 0
             })
-
             btn.MouseButton1Click:Connect(callback)
             table.insert(Tab.Elements, btn)
         end
 
         function Tab:CreateToggle(name, callback)
             local state = false
-
             local btn = Create("TextButton", {
                 Parent = TabFrame,
                 Text = name.." : OFF",
@@ -170,20 +166,18 @@ function Dragonite:CreateWindow(cfg)
                 TextSize = Dragonite.UI.ElementSize,
                 BorderSizePixel = 0
             })
-
             btn.MouseButton1Click:Connect(function()
                 state = not state
                 btn.Text = name.." : "..(state and "ON" or "OFF")
+                btn.TextColor3 = state and Dragonite.Theme.ToggleOn or Dragonite.Theme.ToggleOff
                 callback(state)
             end)
-
             table.insert(Tab.Elements, btn)
         end
 
         function Tab:CreateSlider(name, min, max, callback)
             local value = min
-
-            local Frame = Create("Frame", {
+            local SliderFrame = Create("Frame", {
                 Parent = TabFrame,
                 Size = UDim2.new(0,150,0,25),
                 Position = UDim2.new(0,0,0,Tab:NextY()),
@@ -192,7 +186,7 @@ function Dragonite:CreateWindow(cfg)
             })
 
             local Label = Create("TextLabel", {
-                Parent = Frame,
+                Parent = SliderFrame,
                 Size = UDim2.new(1,0,1,0),
                 BackgroundTransparency = 1,
                 Text = name.." : "..value,
@@ -200,21 +194,18 @@ function Dragonite:CreateWindow(cfg)
                 TextSize = Dragonite.UI.ElementSize
             })
 
-            Frame.InputBegan:Connect(function(input)
+            SliderFrame.InputBegan:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    local move
+                    local move, up
                     move = UIS.InputChanged:Connect(function(i)
                         if i.UserInputType == Enum.UserInputType.MouseMovement then
-                            local percent = (i.Position.X - Frame.AbsolutePosition.X) / Frame.AbsoluteSize.X
+                            local percent = (i.Position.X - SliderFrame.AbsolutePosition.X) / SliderFrame.AbsoluteSize.X
                             percent = math.clamp(percent,0,1)
-
                             value = math.floor(min + (max-min)*percent)
                             Label.Text = name.." : "..value
                             callback(value)
                         end
                     end)
-
-                    local up
                     up = UIS.InputEnded:Connect(function(i)
                         if i.UserInputType == Enum.UserInputType.MouseButton1 then
                             move:Disconnect()
@@ -223,8 +214,64 @@ function Dragonite:CreateWindow(cfg)
                     end)
                 end
             end)
+            table.insert(Tab.Elements, SliderFrame)
+        end
 
-            table.insert(Tab.Elements, Frame)
+        function Tab:CreateKeybind(name, callback)
+            local key = nil
+            local btn = Create("TextButton", {
+                Parent = TabFrame,
+                Text = name.." : NONE",
+                Size = UDim2.new(0,150,0,25),
+                Position = UDim2.new(0,0,0,Tab:NextY()),
+                BackgroundColor3 = Dragonite.Theme.Panel,
+                TextColor3 = Dragonite.Theme.Text,
+                TextSize = Dragonite.UI.ElementSize,
+                BorderSizePixel = 0
+            })
+
+            btn.MouseButton1Click:Connect(function()
+                btn.Text = name.." : ..."
+                local conn
+                conn = UIS.InputBegan:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.Keyboard then
+                        key = input.KeyCode
+                        btn.Text = name.." : "..tostring(key):gsub("Enum.KeyCode.","")
+                        conn:Disconnect()
+                        callback(key)
+                    end
+                end)
+            end)
+
+            table.insert(Tab.Elements, btn)
+        end
+
+        function Tab:CreateListBox(name, items, callback)
+            local listFrame = Create("Frame", {
+                Parent = TabFrame,
+                Size = UDim2.new(0,150,0,25),
+                Position = UDim2.new(0,0,0,Tab:NextY()),
+                BackgroundColor3 = Dragonite.Theme.Panel,
+                BorderSizePixel = 0
+            })
+
+            local label = Create("TextLabel", {
+                Parent = listFrame,
+                Size = UDim2.new(1,0,1,0),
+                BackgroundTransparency = 1,
+                Text = name.." : "..(items[1] or ""),
+                TextColor3 = Dragonite.Theme.Text,
+                TextSize = Dragonite.UI.ElementSize
+            })
+
+            local currentIndex = 1
+            listFrame.MouseButton1Click:Connect(function()
+                currentIndex = currentIndex % #items + 1
+                label.Text = name.." : "..items[currentIndex]
+                callback(items[currentIndex])
+            end)
+
+            table.insert(Tab.Elements, listFrame)
         end
 
         Tab.Frame = TabFrame
