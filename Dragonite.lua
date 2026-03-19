@@ -1,6 +1,10 @@
 local Dragonite = {}
 
 local UIS = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+
+local LP = Players.LocalPlayer
+local PlayerGui = LP:WaitForChild("PlayerGui")
 
 Dragonite.Theme = {
     Background = Color3.fromRGB(18,18,18),
@@ -10,210 +14,227 @@ Dragonite.Theme = {
 }
 
 Dragonite.UI = {
-    TitleSize = 18,
-    TabSize = 16,
-    ElementSize = 15,
-    SmallSize = 13,
-
-    TabSpacing = 28,
-    ElementSpacing = 26
+    TitleSize = 15,
+    TabSize = 13,
+    ElementSize = 12,
+    TabSpacing = 30,
+    ElementSpacing = 25
 }
 
-local function Create(class,props)
-    local obj = Drawing.new(class)
-
-    if class == "Text" then
-        obj.Font = 2
-        obj.Outline = true
-    end
-
+local function Create(class, props)
+    local obj = Instance.new(class)
     for i,v in pairs(props) do
         obj[i] = v
     end
-
     return obj
 end
 
-local function MouseIn(pos,size)
-    local m = UIS:GetMouseLocation()
-    return m.X > pos.X
-    and m.X < pos.X + size.X
-    and m.Y > pos.Y
-    and m.Y < pos.Y + size.Y
-end
-
 function Dragonite:CreateWindow(cfg)
-
     local Window = {}
     Window.Tabs = {}
-    Window.Position = Vector2.new(300,200)
-    Window.Size = cfg.Size or Vector2.new(600,400)
+    Window.ActiveTab = nil
 
-    local bg = Create("Square",{
-        Size = Window.Size,
-        Position = Window.Position,
-        Color = self.Theme.Background,
-        Filled = true,
-        Visible = true
+    local ScreenGui = Create("ScreenGui", {
+        Parent = PlayerGui,
+        ResetOnSpawn = false
     })
 
-    local sidebar = Create("Square",{
-        Size = Vector2.new(90,Window.Size.Y),
-        Position = Window.Position,
-        Color = self.Theme.Panel,
-        Filled = true,
-        Visible = true
+    local Main = Create("Frame", {
+        Parent = ScreenGui,
+        Size = UDim2.new(0,600,0,400),
+        Position = UDim2.new(0.5,-300,0.5,-200),
+        BackgroundColor3 = self.Theme.Background,
+        BorderSizePixel = 0
     })
 
-    local accent = Create("Square",{
-        Size = Vector2.new(2,Window.Size.Y),
-        Position = Window.Position + Vector2.new(90,0),
-        Color = self.Theme.Accent,
-        Filled = true,
-        Visible = true
+    local Sidebar = Create("Frame", {
+        Parent = Main,
+        Size = UDim2.new(0,90,1,0),
+        BackgroundColor3 = self.Theme.Panel,
+        BorderSizePixel = 0
     })
 
-    local title = Create("Text",{
+    local Accent = Create("Frame", {
+        Parent = Main,
+        Size = UDim2.new(0,2,1,0),
+        Position = UDim2.new(0,90,0,0),
+        BackgroundColor3 = self.Theme.Accent,
+        BorderSizePixel = 0
+    })
+
+    local Title = Create("TextLabel", {
+        Parent = Main,
         Text = cfg.Title or "Dragonite",
-        Size = self.UI.TitleSize,
-        Color = self.Theme.Text,
-        Position = Window.Position + Vector2.new(100,10),
-        Visible = true
+        Size = UDim2.new(0,200,0,30),
+        Position = UDim2.new(0,100,0,5),
+        BackgroundTransparency = 1,
+        TextColor3 = self.Theme.Text,
+        TextSize = self.UI.TitleSize,
+        Font = Enum.Font.SourceSansBold,
+        TextXAlignment = Enum.TextXAlignment.Left
     })
 
+    local Content = Create("Frame", {
+        Parent = Main,
+        Size = UDim2.new(1,-100,1,-40),
+        Position = UDim2.new(0,100,0,40),
+        BackgroundTransparency = 1
+    })
+
+    -- DRAGGING
     local dragging = false
     local dragOffset
 
-    UIS.InputBegan:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 then
-            if MouseIn(Window.Position,Vector2.new(Window.Size.X,30)) then
-                dragging = true
-                dragOffset = UIS:GetMouseLocation() - Window.Position
-            end
+    Main.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragOffset = input.Position - Main.AbsolutePosition
         end
     end)
 
-    UIS.InputEnded:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 then
+    UIS.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = false
         end
     end)
 
-    UIS.InputChanged:Connect(function(i)
-        if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
-            local mouse = UIS:GetMouseLocation()
-
-            Window.Position = mouse - dragOffset
-
-            bg.Position = Window.Position
-            sidebar.Position = Window.Position
-            accent.Position = Window.Position + Vector2.new(90,0)
-            title.Position = Window.Position + Vector2.new(100,10)
+    UIS.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local pos = input.Position - dragOffset
+            Main.Position = UDim2.new(0,pos.X,0,pos.Y)
         end
     end)
 
-    function Window:CreateTab(name,icon)
-
+    function Window:CreateTab(name, icon)
         local Tab = {}
         Tab.Elements = {}
 
         local tabIndex = #Window.Tabs
 
-        local tabBtn = Create("Text",{
-            Text = icon.." "..name,
-            Size = Dragonite.UI.TabSize,
-            Position = Window.Position + Vector2.new(10,50 + tabIndex * Dragonite.UI.TabSpacing),
-            Color = Dragonite.Theme.Text,
-            Visible = true
+        local TabButton = Create("TextButton", {
+            Parent = Sidebar,
+            Text = (icon or "").." "..name,
+            Size = UDim2.new(1,0,0,25),
+            Position = UDim2.new(0,0,0,50 + tabIndex * Dragonite.UI.TabSpacing),
+            BackgroundTransparency = 1,
+            TextColor3 = Dragonite.Theme.Text,
+            TextSize = Dragonite.UI.TabSize,
+            Font = Enum.Font.SourceSans
         })
 
-        local function NextY()
-            return 60 + (#Tab.Elements * Dragonite.UI.ElementSpacing)
+        local TabFrame = Create("Frame", {
+            Parent = Content,
+            Size = UDim2.new(1,0,1,0),
+            BackgroundTransparency = 1,
+            Visible = false
+        })
+
+        TabButton.MouseButton1Click:Connect(function()
+            for _,t in pairs(Window.Tabs) do
+                t.Frame.Visible = false
+            end
+            TabFrame.Visible = true
+            Window.ActiveTab = Tab
+        end)
+
+        function Tab:NextY()
+            return (#Tab.Elements) * Dragonite.UI.ElementSpacing
         end
 
-        function Tab:CreateButton(name,callback)
-
-            local y = NextY()
-
-            local txt = Create("Text",{
+        function Tab:CreateButton(name, callback)
+            local btn = Create("TextButton", {
+                Parent = TabFrame,
                 Text = name,
-                Size = Dragonite.UI.ElementSize,
-                Position = Window.Position + Vector2.new(110,y),
-                Color = Dragonite.Theme.Text,
-                Visible = true
+                Size = UDim2.new(0,150,0,25),
+                Position = UDim2.new(0,0,0,Tab:NextY()),
+                BackgroundColor3 = Dragonite.Theme.Panel,
+                TextColor3 = Dragonite.Theme.Text,
+                TextSize = Dragonite.UI.ElementSize,
+                BorderSizePixel = 0
             })
 
-            UIS.InputBegan:Connect(function(i)
-                if i.UserInputType == Enum.UserInputType.MouseButton1 then
-                    if MouseIn(txt.Position,Vector2.new(150,20)) then
-                        callback()
-                    end
-                end
-            end)
-
-            table.insert(Tab.Elements,txt)
+            btn.MouseButton1Click:Connect(callback)
+            table.insert(Tab.Elements, btn)
         end
 
-        function Tab:CreateToggle(name,callback)
-
+        function Tab:CreateToggle(name, callback)
             local state = false
-            local y = NextY()
 
-            local txt = Create("Text",{
+            local btn = Create("TextButton", {
+                Parent = TabFrame,
                 Text = name.." : OFF",
-                Size = Dragonite.UI.ElementSize,
-                Position = Window.Position + Vector2.new(110,y),
-                Color = Dragonite.Theme.Text,
-                Visible = true
+                Size = UDim2.new(0,150,0,25),
+                Position = UDim2.new(0,0,0,Tab:NextY()),
+                BackgroundColor3 = Dragonite.Theme.Panel,
+                TextColor3 = Dragonite.Theme.Text,
+                TextSize = Dragonite.UI.ElementSize,
+                BorderSizePixel = 0
             })
 
-            UIS.InputBegan:Connect(function(i)
-                if i.UserInputType == Enum.UserInputType.MouseButton1 then
-                    if MouseIn(txt.Position,Vector2.new(150,20)) then
-                        state = not state
-                        txt.Text = name.." : "..(state and "ON" or "OFF")
-                        callback(state)
-                    end
-                end
+            btn.MouseButton1Click:Connect(function()
+                state = not state
+                btn.Text = name.." : "..(state and "ON" or "OFF")
+                callback(state)
             end)
 
-            table.insert(Tab.Elements,txt)
+            table.insert(Tab.Elements, btn)
         end
 
-        function Tab:CreateSlider(name,min,max,callback)
-
+        function Tab:CreateSlider(name, min, max, callback)
             local value = min
-            local y = NextY()
 
-            local txt = Create("Text",{
-                Text = name.." : "..value,
-                Size = Dragonite.UI.ElementSize,
-                Position = Window.Position + Vector2.new(110,y),
-                Color = Dragonite.Theme.Text,
-                Visible = true
+            local Frame = Create("Frame", {
+                Parent = TabFrame,
+                Size = UDim2.new(0,150,0,25),
+                Position = UDim2.new(0,0,0,Tab:NextY()),
+                BackgroundColor3 = Dragonite.Theme.Panel,
+                BorderSizePixel = 0
             })
 
-            UIS.InputChanged:Connect(function(i)
-                if i.UserInputType == Enum.UserInputType.MouseMovement then
-                    if UIS:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
-                    and MouseIn(txt.Position,Vector2.new(150,20)) then
+            local Label = Create("TextLabel", {
+                Parent = Frame,
+                Size = UDim2.new(1,0,1,0),
+                BackgroundTransparency = 1,
+                Text = name.." : "..value,
+                TextColor3 = Dragonite.Theme.Text,
+                TextSize = Dragonite.UI.ElementSize
+            })
 
-                        local m = UIS:GetMouseLocation()
-                        local percent = (m.X - txt.Position.X) / 150
-                        percent = math.clamp(percent,0,1)
+            Frame.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    local move
+                    move = UIS.InputChanged:Connect(function(i)
+                        if i.UserInputType == Enum.UserInputType.MouseMovement then
+                            local percent = (i.Position.X - Frame.AbsolutePosition.X) / Frame.AbsoluteSize.X
+                            percent = math.clamp(percent,0,1)
 
-                        value = math.floor(min + (max-min)*percent)
-                        txt.Text = name.." : "..value
+                            value = math.floor(min + (max-min)*percent)
+                            Label.Text = name.." : "..value
+                            callback(value)
+                        end
+                    end)
 
-                        callback(value)
-                    end
+                    local up
+                    up = UIS.InputEnded:Connect(function(i)
+                        if i.UserInputType == Enum.UserInputType.MouseButton1 then
+                            move:Disconnect()
+                            up:Disconnect()
+                        end
+                    end)
                 end
             end)
 
-            table.insert(Tab.Elements,txt)
+            table.insert(Tab.Elements, Frame)
         end
 
-        table.insert(Window.Tabs,Tab)
+        Tab.Frame = TabFrame
+        table.insert(Window.Tabs, Tab)
+
+        if not Window.ActiveTab then
+            TabFrame.Visible = true
+            Window.ActiveTab = Tab
+        end
+
         return Tab
     end
 
