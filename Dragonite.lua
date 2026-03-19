@@ -133,53 +133,54 @@ function Dragonite:CreateWindow(cfg)
         })
 
         function Tab:CreateToggle(name, callback)
-            local toggle = {
-                Enabled = false,
-                Drawings = {}
-            }
+    local toggle = {
+        Enabled = false,
+        Drawings = {}
+    }
 
-            local yPos = 20 + (#Tab.Elements * 28)
+    local index = #Tab.Elements + 1 -- i guess bro
 
-            local boxOuter = Create("Square", {Size = Vector2.new(14, 14), Color = Color3.new(0,0,0), Filled = false, Thickness = 1})
-            local box = Create("Square", {Size = Vector2.new(12, 12), Color = Dragonite.Theme.Outline, Filled = true})
-            local label = Create("Text", {
-                Text = string.upper(name),
-                Size = Dragonite.Fonts.Default,
-                Color = Dragonite.Theme.TextDark
-            })
+    local boxOuter = Create("Square", {Size = Vector2.new(14, 14), Color = Color3.new(0,0,0), Filled = false, Thickness = 1})
+    local box = Create("Square", {Size = Vector2.new(12, 12), Color = Dragonite.Theme.Outline, Filled = true})
+    local label = Create("Text", {
+        Text = string.upper(name),
+        Size = Dragonite.Fonts.Default,
+        Color = Dragonite.Theme.TextDark
+    })
 
-            RunService.RenderStepped:Connect(function()
-                if Tab.Active then
-                    local base = innerContent.Position + Vector2.new(15, yPos)
+    RunService.RenderStepped:Connect(function()
+        if Tab.Active then
+            local yPos = 20 + (index * 28)
+            local base = innerContent.Position + Vector2.new(15, yPos)
 
-                    box.Position = base
-                    boxOuter.Position = base - Vector2.new(1,1)
-                    boxOuter.Size = box.Size + Vector2.new(2,2)
+            box.Position = base
+            boxOuter.Position = base - Vector2.new(1,1)
+            boxOuter.Size = box.Size + Vector2.new(2,2)
 
-                    box.Color = toggle.Enabled and Dragonite.Theme.Accent or Color3.fromRGB(35,35,35)
+            box.Color = toggle.Enabled and Dragonite.Theme.Accent or Color3.fromRGB(35,35,35)
 
-                    label.Position = base + Vector2.new(22, -1)
-                    label.Color = toggle.Enabled and Dragonite.Theme.Text or Dragonite.Theme.TextDark
-                end
-            end)
-
-            UIS.InputBegan:Connect(function(i)
-                if i.UserInputType == Enum.UserInputType.MouseButton1 and Tab.Active then
-                    if MouseIn(box.Position, Vector2.new(160, 16)) then
-                        toggle.Enabled = not toggle.Enabled
-                        if callback then
-                            callback(toggle.Enabled)
-                        end
-                    end
-                end
-            end)
-
-            table.insert(toggle.Drawings, boxOuter)
-            table.insert(toggle.Drawings, box)
-            table.insert(toggle.Drawings, label)
-
-            table.insert(Tab.Elements, toggle)
+            label.Position = base + Vector2.new(22, -1)
+            label.Color = toggle.Enabled and Dragonite.Theme.Text or Dragonite.Theme.TextDark
         end
+    end)
+
+    UIS.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 and Tab.Active then
+            if MouseIn(box.Position, Vector2.new(160, 16)) then
+                toggle.Enabled = not toggle.Enabled
+                if callback then
+                    callback(toggle.Enabled)
+                end
+            end
+        end
+    end)
+
+    table.insert(toggle.Drawings, boxOuter)
+    table.insert(toggle.Drawings, box)
+    table.insert(toggle.Drawings, label)
+
+    table.insert(Tab.Elements, toggle)
+end
 
         table.insert(Window.Tabs, Tab)
         return Tab
