@@ -1,5 +1,5 @@
 -- Da hood based games walkspeed Only!
-
+-- i made this to learn how the games do it its ass dont expect much
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
